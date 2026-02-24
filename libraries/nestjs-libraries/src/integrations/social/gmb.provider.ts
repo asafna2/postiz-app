@@ -64,6 +64,14 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    if (body.includes('Unauthorized')) {
+      return {
+        type: 'refresh-token',
+        value:
+          'Token expired or invalid, please reconnect your YouTube account.',
+      };
+    }
+
     if (body.includes('PERMISSION_DENIED')) {
       return {
         type: 'refresh-token',
@@ -320,7 +328,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     id: string,
     requiredId: string,
     accessToken: string
-  ): Promise<AuthTokenDetails> {
+  ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
     const pages = await this.pages(accessToken);
     const findPage = pages.find((p) => p.id === requiredId);
 
@@ -338,8 +346,6 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       id: information.id,
       name: information.name,
       accessToken: information.access_token,
-      refreshToken: information.access_token,
-      expiresIn: dayjs().add(59, 'days').unix() - dayjs().unix(),
       picture: information.picture,
       username: information.username,
     };
@@ -553,5 +559,16 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       console.error('Error fetching GMB analytics:', error);
       return [];
     }
+  }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    // Google My Business local posts don't have detailed individual post analytics
+    // The API focuses on location-level metrics rather than post-level metrics
+    return [];
   }
 }
